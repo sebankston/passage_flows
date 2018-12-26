@@ -1,0 +1,45 @@
+---
+title: "passage_flows"
+author: "Sam Bankston"
+date: "December 26, 2018"
+output: html_document
+---
+
+Load libraries with Kable
+
+```{r message=FALSE, warning=FALSE}
+library(lubridate)
+library(tidyverse)
+library(kableExtra)
+```
+
+
+Read in all flow csv files
+
+```{r message=FALSE, warning=FALSE}
+all_flow <- list.files(pattern = "*flow.csv") %>% map_df(~read_csv(.)) %>% mutate(date_time = paste(Date, " ", Time), date_time = mdy_hms(date_time)) %>% rename(flow = Flow) %>% select(Stream, date_time, flow) %>% mutate(Day = date(date_time), Year = year(date_time))
+```
+
+Summary of daily flow values
+
+```{r}
+daily_flow_summary <- all_flow %>% filter(month(date_time) >= 1 & month(date_time) < 6) %>% group_by(Stream, Year, Day) %>% summarize(mean_daily_flow = mean(flow, na.rm = TRUE)) %>% ungroup()
+```
+
+Calculate low and high flow thresholds
+
+```{r}
+low_high <- daily_flow_summary %>% group_by(Stream) %>% summarize(low_flow = quantile(mean_daily_flow, probs = .50, na.rm = TRUE), high_flow = quantile(mean_daily_flow, probs = 0.99, na.rm = TRUE)) %>% print()
+```
+
+Top 5 mean daily flow values by stream
+
+```{r}
+top_5 <- daily_flow_summary %>% group_by(Stream) %>% top_n(n = 5, wt = mean_daily_flow) %>% arrange(desc(mean_daily_flow)) 
+
+top_5 %>% knitr::kable(caption = 'Top 5 Mean Daily Flow Values', digits = 0 ) %>% kable_styling(bootstrap_options = c("striped", "condensed", "hover")) %>% group_rows("",1, 5) %>% group_rows("",6, 10)
+ 
+```
+
+
+
