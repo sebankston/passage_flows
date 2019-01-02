@@ -11,6 +11,17 @@ Load libraries with Kable
 library(lubridate)
 library(tidyverse)
 library(kableExtra)
+library(waterData)
+```
+
+
+Use the waterData package to read in USGS flow data
+
+```{r}
+matilija_hl_flow <- importDVs(staid = "11114495", code = "00060") %>% mutate(Stream = "matilija_creek", date_time = ymd(dates), Year = year(date_time), Day = day(date_time)) %>% rename(flow = val) %>% select(Stream, date_time, flow, Day, Year) %>% summarize(low_flow = quantile(flow, probs = .50, na.rm = TRUE), high_flow = quantile(flow, probs = 0.99, na.rm = TRUE)) 
+
+matilija_hl_flow %>% knitr::kable(caption = 'Matilija High and Low Fish Passage Flows', digits = 2) %>% kable_styling(bootstrap_options = c("striped", "condensed", "hover"), full_width = FALSE)
+
 ```
 
 
@@ -31,17 +42,23 @@ Calculate low and high flow thresholds
 ```{r}
 low_high <- daily_flow_summary %>% group_by(Stream) %>% summarize(low_flow = quantile(mean_daily_flow, probs = .50, na.rm = TRUE), high_flow = quantile(mean_daily_flow, probs = 0.99, na.rm = TRUE)) 
 
-low_high %>% knitr::kable(caption = 'High and Low Fish Passage Flows', digits = 2) %>% kable_styling(bootstrap_options = c("striped", "condensed", "hover"))
+low_high %>% knitr::kable(caption = 'High and Low Fish Passage Flows', digits = 2) %>% kable_styling(bootstrap_options = c("striped", "condensed", "hover"), full_width = FALSE)
 
 ```
 
-Top 5 mean daily flow values by stream
+Top 5 mean daily flow values by stream 
 
-```{r echo=FA}
-top_5 <- daily_flow_summary %>% group_by(Stream) %>% top_n(n = 5, wt = mean_daily_flow) %>% arrange(desc(mean_daily_flow)) 
+```{r }
+top_5 <- daily_flow_summary %>% select(- Year) %>% group_by(Stream) %>% top_n(n = 5, wt = mean_daily_flow) %>% arrange(Stream, desc(mean_daily_flow)) 
 
-top_5 %>% knitr::kable(caption = 'Top 5 Mean Daily Flow Values', digits = 0 ) %>% kable_styling(bootstrap_options = c("striped", "condensed", "hover")) %>% group_rows("",1, 5) %>% group_rows("",6, 10)
+top_5 %>% knitr::kable(caption = 'Top 5 Mean Daily Flow Values', digits = 0 ) %>% kable_styling(bootstrap_options = c("striped", "condensed", "hover"), full_width = FALSE) %>% group_rows("", 1, 5) %>% group_rows("", 6, 10) %>% group_rows("", 11, 15) %>% group_rows("", 16, 20) %>% group_rows("", 21, 25) 
  
+```
+
+Number of years
+
+```{r}
+daily_flow_summary %>% group_by(Stream) %>% summarize(from = min(.$Year), to = max(.$Year), years_included = n_distinct(Year)) %>% kable(caption = "Number of Years Included") %>% kable_styling(bootstrap_options = c("striped", "condensed", "hover"), full_width = FALSE)
 ```
 
 
