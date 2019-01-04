@@ -14,8 +14,16 @@ library(kableExtra)
 library(waterData)
 ```
 
+Use the waterData package to read in USGS flow data for Ventura River
 
-Use the waterData package to read in USGS flow data
+```{r}
+ventura_hl_flow <- importDVs(staid = "11118500", code = "00060") %>% mutate(Stream = "ventura_river", date_time = ymd(dates), Year = year(date_time), Day = day(date_time)) %>% rename(flow = val) %>% select(Stream, date_time, flow, Day, Year) %>% summarize(low_flow = quantile(flow, probs = .50, na.rm = TRUE), high_flow = quantile(flow, probs = 0.99, na.rm = TRUE)) 
+
+ventura_hl_flow %>% knitr::kable(caption = 'Ventura High and Low Fish Passage Flows', digits = 2) %>% kable_styling(bootstrap_options = c("striped", "condensed", "hover"), full_width = FALSE)
+
+```
+
+Use the waterData package to read in USGS flow data for Matilija Creek
 
 ```{r}
 matilija_hl_flow <- importDVs(staid = "11114495", code = "00060") %>% mutate(Stream = "matilija_creek", date_time = ymd(dates), Year = year(date_time), Day = day(date_time)) %>% rename(flow = val) %>% select(Stream, date_time, flow, Day, Year) %>% summarize(low_flow = quantile(flow, probs = .50, na.rm = TRUE), high_flow = quantile(flow, probs = 0.99, na.rm = TRUE)) 
